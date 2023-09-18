@@ -1,12 +1,13 @@
+"""
+@author: weiso131
+"""
+
 import requests
 from bs4 import BeautifulSoup
 import re
-
-
-user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
-
-def find_word(word, user_agent):
     
+def find_word(word):
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
     url = "https://dictionary.cambridge.org/zht/%E8%A9%9E%E5%85%B8/%E8%8B%B1%E8%AA%9E-%E6%BC%A2%E8%AA%9E-%E7%B9%81%E9%AB%94/"
     real_url = url + word
     header = {"User-Agent" : user_agent}
@@ -22,13 +23,38 @@ def find_word(word, user_agent):
     html_row_split = rest.text.split('\n')
     #給分行查詢使用
     
-    pure_meaning, pure_tran_sentence = get_meaning(soup)
-    sentence = get_sample_sentence(soup)
+    pure_meaning, pure_tran_sentence = get_meaning(soup) #中文意思、例句中文翻譯
+    sentence = get_sample_sentence(soup) #例句
+    pos = get_pos(soup)#詞性
     
+    if (check_title(soup, word) != word):
+        return "## can't find the word " + word
     
-    for i in range(len(sentence)):
-        if (find_part_in_html(sentence[i], html_row_split) == -1):
-            print("例句:", sentence[i], '\n')
+    word_note = "\n## " + word + '\n'
+    counter = 0
+
+    
+    for i in range(len(pure_meaning)):
+        text  = '### ' + pos[i] + ' ' + pure_meaning[i] + '\n'
+        
+        if (i < len(pure_meaning) - 1):
+            next_index = find_part_in_html(pure_meaning[i + 1], html_row_split)
+            
+            #print(next_index, pure_meaning[i])
+            
+            while (find_part_in_html(pure_tran_sentence[counter], html_row_split) < next_index):
+                #print(find_part_in_html(pure_tran_sentence[counter], html_row_split),pure_tran_sentence[counter])
+                text += "例句:" + sentence[counter] + "\n中文:" + pure_tran_sentence[counter] + '\n'
+                
+                counter += 1
+        else:
+            while(counter < len(sentence)):
+                text += "例句:" + sentence[counter] + "\n中文:" + pure_tran_sentence[counter] + '\n'
+                counter += 1
+        
+        word_note += text + '\n'
+    
+    return word_note
         
     
 
@@ -83,6 +109,27 @@ def get_sample_sentence(soup):
         sentence.append(text)
     return sentence
 
+def get_pos(soup):
+    """
+    取得單字詞性
+    """
+    class_ = ['pos', 'dpos']
+    
+    finded = soup.find_all('span', class_ = class_)
+    
+    pos = list(data.text for data in finded)
+    
+    return pos
+
+def check_title(soup, word):
+    class_ = ['di-title']
+
+
+    finded = soup.find_all('div', class_ = class_)
+    if (len(finded) < 2):
+        return "xxxxx"
+    return finded[1].text
+    
 def find_part_in_html(text, html_row_split):
     """
     找出每個句子的先後順序
@@ -109,19 +156,15 @@ def find_part_in_html(text, html_row_split):
             
     return -1
     
+
+
+    
+
+#find_word("analysis")
+    
     
     
 
-find_word("approach", user_agent)
-    
-    
-    
-"""
-TODO:
-1.判斷這個單字能不能找到(看網頁標題)
-2.將每個句子對應到它所表示的單字意思裡面
-3.尋找每個意思的詞性
-"""
     
     
     

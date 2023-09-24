@@ -5,7 +5,7 @@
 import requests
 from bs4 import BeautifulSoup
 import re
-    
+import time
 def find_word(word):
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
     url = "https://dictionary.cambridge.org/zht/%E8%A9%9E%E5%85%B8/%E8%8B%B1%E8%AA%9E-%E6%BC%A2%E8%AA%9E-%E7%B9%81%E9%AB%94/"
@@ -13,7 +13,18 @@ def find_word(word):
     header = {"User-Agent" : user_agent}
     
     rest = requests.get(real_url, headers = header)
-    print("status code:", rest.status_code)
+    
+    
+    
+    # print("status code:", rest.status_code)
+    if (rest.status_code != 200):
+        i = 0
+        while (i < 3 and rest.status_code != 200):
+            rest = requests.get(real_url, headers = header)
+            time.sleep(30)
+        print("can't find ", word, rest.status_code)
+        return None
+    
     #檢查連線狀態，應該要是200
     
     soup = BeautifulSoup(rest.text, 'html.parser')
@@ -28,28 +39,39 @@ def find_word(word):
     pos = get_pos(soup)#詞性
     
     if (check_title(soup, word) != word):
-        return "## can't find the word " + word
+        print("can't find ", word, rest.status_code)
+        return None
     
-    word_note = "\n## " + word + '\n'
+    word_note = "{a}" + word + '{/a}'
+    word_note += "{w}" + real_url + "{/w}"
     counter = 0
-
+        
+    """
+    print("sentence:", sentence)
+    print("pure_tran_sentence", pure_tran_sentence)    
+    """
+    
     
     for i in range(len(pure_meaning)):
-        text  = '### ' + pos[i] + ' ' + pure_meaning[i] + '\n'
+        text  = '{b}' + pos[min(i, len(pos) - 1)] + ' ' + pure_meaning[i] + '{/b}'
+        
+        
+        
         
         if (i < len(pure_meaning) - 1):
             next_index = find_part_in_html(pure_meaning[i + 1], html_row_split)
             
             #print(next_index, pure_meaning[i])
             
-            while (find_part_in_html(pure_tran_sentence[counter], html_row_split) < next_index):
+            while (counter < len(pure_tran_sentence) and
+                   find_part_in_html(pure_tran_sentence[counter], html_row_split) < next_index):
                 #print(find_part_in_html(pure_tran_sentence[counter], html_row_split),pure_tran_sentence[counter])
-                text += "例句:" + sentence[counter] + "\n中文:" + pure_tran_sentence[counter] + '\n'
+                text += "{c}" + sentence[counter]  + '{/c}'
                 
                 counter += 1
         else:
             while(counter < len(sentence)):
-                text += "例句:" + sentence[counter] + "\n中文:" + pure_tran_sentence[counter] + '\n'
+                text += "{c}" + sentence[counter]  + '{/c}'
                 counter += 1
         
         word_note += text + '\n'
@@ -159,11 +181,15 @@ def find_part_in_html(text, html_row_split):
 
 
     
+"""
+x = find_word("analysis")
 
-#find_word("analysis")
+x = x.replace("{w}", "[網址](")
+x = x.replace("{/w}", ")\n")
+
+print(x)
     
-    
-    
+"""
 
     
     

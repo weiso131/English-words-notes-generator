@@ -5,7 +5,7 @@
 import time
 
 from dict_function import find_word
-
+from pathlib import Path
 
 replace_ = {"{a}" : "\n## ",
             "{/a}" : "\n",
@@ -17,12 +17,38 @@ replace_ = {"{a}" : "\n## ",
             "{/w}": ")\n"}
 
 
-
+word_path = ""
+note_path = ""
+reset_counter = ""
 words = ""
-
-with open("text_doc/words.txt", "r") as file:
-    words = file.read()
-    file.close()
+check = ""
+while (True):
+    while (True):
+        word_path = input("單字路徑(xxx.txt):")
+        if (".txt" in word_path):
+            try:
+                with open("text_doc/" + word_path, "r") as file:
+                    words = file.read()
+                    file.close()
+                    break
+            except:
+                print("路徑不存在，請重新輸入")
+    while ((".txt" in note_path) != True):
+        note_path = input("筆記記錄路徑(xxx.txt):")
+        
+                
+    while (reset_counter != "y" and reset_counter != "n"):
+        reset_counter = input("重製counter(y/n):")
+    
+    
+    print("單字路徑: ", "text_doc/" + word_path)
+    print("筆記路徑: ", "text_doc/" + note_path)
+    if(reset_counter == "y"): print("重製counter")
+    else: print("不重製counter")
+    
+    while (check != "y" and check != "n"):
+        check = input("確認無誤?(y/n)")
+    if(check == "y"):break
     
 
 
@@ -31,16 +57,22 @@ words = words.split('\n')
 
 notes = ""
 
-with open("text_doc/note.txt", "r", encoding = "utf-8") as file:
+note_file = Path("text_doc/" + note_path)
+note_file.touch(exist_ok = True)
+
+
+with open("text_doc/" + note_path, "r", encoding = "utf-8") as file:
     notes = file.read()
     file.close()
 
+    
 
 counter = 0
-with open("text_doc/counter.txt", "r", encoding = "utf-8") as file:
-    counter = int(file.read())
-    file.close()
-
+if (reset_counter == "n"):
+    with open("text_doc/counter.txt", "r", encoding = "utf-8") as file:
+        counter = int(file.read())
+        file.close()
+print("counter:" ,counter)
 n = len(words)
 
 
@@ -67,7 +99,7 @@ for i in range(counter, n):
     
     notes += text
     #print(w, ' is complete')
-    with open("text_doc/note.txt", "w", encoding = "utf-8") as file:
+    with open("text_doc/" + note_path, "w", encoding = "utf-8") as file:
         
         file.write(notes)
         file.close()
